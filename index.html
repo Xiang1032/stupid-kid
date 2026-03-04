@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta charset="UTF-8">
-  <title>誰是笨小孩 - 笨小孩娛樂版</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>誰是笨小孩 - 進階挑戰版</title>
   <style>
     :root {
       --bg-color: #0d0d12;
-      --panel-bg: rgba(25, 25, 35, 0.85);
+      --panel-bg: rgba(25, 25, 35, 0.9);
       --accent-cyan: #00f2ff;
       --neon-green: #39ff14;
       --miss-red: #ff3131;
@@ -22,29 +22,28 @@
       align-items: center; 
       height: 100vh; 
       color: white;
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Segoe UI', Roboto, sans-serif;
       margin: 0;
       overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
-    /* 頂部資訊欄 */
     #ui-layer { 
       margin-bottom: 20px; 
       text-align: center; 
       z-index: 5;
     }
     #info { 
-      font-size: 28px; 
+      font-size: 26px; 
       font-weight: 800; 
-      letter-spacing: 2px;
       text-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
     }
     #comboText { 
       color: var(--gold); 
       font-size: 20px; 
       font-weight: bold;
-      height: 30px;
-      text-transform: uppercase;
+      height: 25px;
       font-style: italic;
     }
 
@@ -60,16 +59,16 @@
       background: #15151e; 
       border-radius: 20px; 
       display: block;
+      max-width: 100%;
     }
 
-    /* 覆蓋畫面：使用毛玻璃效果 */
     .overlay {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
       background: var(--panel-bg);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -77,47 +76,45 @@
       border-radius: 20px;
       z-index: 10;
       border: 1px solid rgba(255,255,255,0.1);
+      text-align: center;
     }
     
-    h1 { 
-      color: var(--miss-red); 
-      font-size: 36px; 
-      margin-bottom: 5px; 
-      text-shadow: 0 0 20px rgba(255,49,49,0.5);
-    }
+    h1 { color: var(--miss-red); font-size: 32px; margin: 10px 0; }
     
     button {
-      padding: 16px 50px;
-      font-size: 20px;
+      padding: 16px 45px;
+      font-size: 18px;
       font-weight: bold;
-      border-radius: 12px;
+      border-radius: 50px;
       border: none;
       cursor: pointer;
       background: linear-gradient(45deg, var(--accent-cyan), #7000ff);
       color: white;
       box-shadow: 0 10px 20px rgba(0, 242, 255, 0.3);
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transition: 0.2s;
     }
-    button:hover { 
-      transform: scale(1.05) translateY(-3px); 
-      box-shadow: 0 15px 30px rgba(0, 242, 255, 0.5);
+    button:active { transform: scale(0.95); }
+
+    .stat-box {
+      background: rgba(0,0,0,0.4);
+      padding: 15px 25px;
+      border-radius: 15px;
+      margin-bottom: 25px;
+      border: 1px solid rgba(255,255,255,0.05);
     }
 
     .sound-toggle {
-      position: absolute; bottom: 30px; right: 30px;
-      background: rgba(255,255,255,0.05); 
-      padding: 12px; border-radius: 50%; width: 45px; height: 45px;
-      display: flex; justify-content: center; align-items: center; 
+      position: absolute; bottom: 20px; right: 20px;
+      background: rgba(255,255,255,0.05); width: 40px; height: 40px;
+      border-radius: 50%; display: flex; justify-content: center; align-items: center; 
       cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
-      transition: 0.3s;
     }
-    .sound-toggle:hover { background: rgba(255,255,255,0.2); }
   </style>
 </head>
 <body>
 
   <div id="ui-layer">
-    <div id="info">分數: <span id="scoreDisplay">0</span> <span id="livesDisplay" style="margin-left:20px;">❤️❤️❤️</span></div>
+    <div id="info">得分: <span id="scoreDisplay">0</span> <span id="livesDisplay" style="margin-left:15px;">❤️❤️❤️</span></div>
     <div id="comboText"></div>
   </div>
 
@@ -125,16 +122,21 @@
     <canvas id="game" width="260" height="500"></canvas>
     
     <div id="startScreen" class="overlay">
-      <h2 style="color: var(--accent-cyan); font-size: 32px; margin-bottom: 25px;">誰是笨小孩?</h2>
-      <button id="startBtn">開始遊戲</button>
-      <p style="margin-top: 20px; color: #666; font-size: 14px;">按空白鍵開始</p>
+      <h2 style="color: var(--accent-cyan); margin-bottom: 20px;">誰是笨小孩?</h2>
+      <div class="stat-box">
+        <p style="margin:0; font-size:14px; color:#aaa;">歷史最高紀錄</p>
+        <p id="menuBestScore" style="margin:5px 0 0 0; font-size:24px; color:var(--gold); font-weight:bold;">0</p>
+      </div>
+      <button id="startBtn">開始挑戰</button>
+      <p style="margin-top: 15px; color: #555; font-size: 12px;">點擊螢幕或按空白鍵</p>
     </div>
 
     <div id="gameOverScreen" class="overlay" style="display: none;">
       <h1>你是笨小孩</h1>
-      <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; margin-bottom: 30px; min-width: 180px;">
-        <p>最終分數: <span id="finalScore" style="color:var(--accent-cyan); font-weight:bold;">0</span></p>
-        <p>最高連擊: <span id="maxCombo" style="color:var(--gold); font-weight:bold;">0</span></p>
+      <div class="stat-box">
+        <p>最終分數: <span id="finalScore" style="color:var(--accent-cyan);">0</span></p>
+        <p>最高紀錄: <span id="bestDisplay" style="color:var(--neon-green);">0</span></p>
+        <p id="newRecordText" style="color:var(--gold); font-weight:bold; display:none;">🎉 新紀錄！</p>
       </div>
       <button id="restartBtn">再玩一次</button>
     </div>
@@ -145,16 +147,29 @@
   <script>
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
-    const container = document.getElementById("game-container");
     const comboText = document.getElementById("comboText");
     
     let score = 0, lives = 3, combo = 0, maxCombo = 0;
     let gameRunning = false, paused = false, pauseTimer = 0;
     let isMuted = false;
+    
+    // 從瀏覽器讀取最高分
+    let highScore = localStorage.getItem("stupidHighScore") || 0;
+    document.getElementById("menuBestScore").textContent = highScore;
 
     const pointer = { y: 250, speed: 5, dir: 1 };
-    const redBar = { y: 200, height: 90, width: 55, x: 102.5, speed: 3.5, dir: 1, isMoving: false };
+    const redBar = { 
+      y: 200, 
+      baseHeight: 90, // 初始長度
+      height: 90, 
+      width: 55, 
+      x: 102.5, 
+      speed: 3.5, 
+      dir: 1, 
+      isMoving: false 
+    };
 
+    // 音效系統
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playSound(freq, type, duration, vol=0.1) {
       if (isMuted) return;
@@ -171,15 +186,16 @@
     }
 
     function initGame() {
-      score = 0; lives = 3; combo = 0; maxCombo = 0;
+      score = 0; lives = 3; combo = 0;
       gameRunning = true;
       pointer.speed = 5;
       redBar.speed = 3.5;
-      redBar.height = 90;
+      redBar.height = 90; // 重置長度
       redBar.isMoving = false;
       updateUI();
       document.getElementById("startScreen").style.display = "none";
       document.getElementById("gameOverScreen").style.display = "none";
+      document.getElementById("newRecordText").style.display = "none";
       requestAnimationFrame(loop);
     }
 
@@ -196,31 +212,31 @@
 
       if (isHit) {
         combo++;
-        maxCombo = Math.max(maxCombo, combo);
-        
-        // --- 數值平衡公式：基礎10 + 速度加成 + 輕微連擊加成 ---
         const difficultyBonus = Math.floor(pointer.speed * 2); 
-        const comboBonus = combo * 2;
-        score += (5 + difficultyBonus + comboBonus);
+        score += (5 + difficultyBonus + (combo * 2));
         
         playSound(500 + (Math.min(combo, 15) * 40), 'triangle', 0.2);
         
+        // 增加速度
         pointer.speed += 0.35;
+        
+        // --- 動態難度調整 ---
+        // 1. 分數 > 50 桿子開始移動
         if (score >= 50) redBar.isMoving = true;
-        if (redBar.isMoving) redBar.speed += 0.2;
+        
+        // 2. 每 100 分縮短桿子長度 (最低不小於 35)
+        let shrinkLevels = Math.floor(score / 100);
+        redBar.height = Math.max(35, redBar.baseHeight - (shrinkLevels * 8));
+
+        if (redBar.isMoving) redBar.speed += 0.15;
         
       } else {
         combo = 0;
         lives -= 1;
-        container.style.animation = "shake 0.2s ease-in-out";
-        setTimeout(() => container.style.animation = "", 200);
-        
         playSound(100, 'square', 0.3, 0.05);
+        
         if (lives <= 0) {
-          gameRunning = false;
-          document.getElementById("finalScore").textContent = score;
-          document.getElementById("maxCombo").textContent = maxCombo;
-          document.getElementById("gameOverScreen").style.display = "flex";
+          endGame();
           return;
         }
       }
@@ -230,12 +246,27 @@
       pauseTimer = Date.now();
     }
 
-    document.getElementById("startBtn").onclick = initGame;
-    document.getElementById("restartBtn").onclick = initGame;
-    document.getElementById("muteBtn").onclick = () => {
-      isMuted = !isMuted;
-      document.getElementById("muteBtn").textContent = isMuted ? "🔇" : "🔊";
-    };
+    function endGame() {
+      gameRunning = false;
+      
+      // 處理最高分
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("stupidHighScore", highScore);
+        document.getElementById("newRecordText").style.display = "block";
+      }
+
+      document.getElementById("finalScore").textContent = score;
+      document.getElementById("bestDisplay").textContent = highScore;
+      document.getElementById("menuBestScore").textContent = highScore;
+      document.getElementById("gameOverScreen").style.display = "flex";
+    }
+
+    // 觸控與點擊監聽
+    canvas.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      if (gameRunning) checkHit();
+    });
 
     window.addEventListener("keydown", (e) => {
       if (e.code === "Space") {
@@ -247,6 +278,13 @@
         }
       }
     });
+
+    document.getElementById("startBtn").onclick = initGame;
+    document.getElementById("restartBtn").onclick = initGame;
+    document.getElementById("muteBtn").onclick = () => {
+      isMuted = !isMuted;
+      document.getElementById("muteBtn").textContent = isMuted ? "🔇" : "🔊";
+    };
 
     function update() {
       if (paused) {
@@ -265,36 +303,33 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // 裝飾背景線
       ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
-      ctx.lineWidth = 2;
       for(let i=0; i<canvas.height; i+=40) {
         ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
       }
 
-      ctx.fillStyle = "rgba(255, 49, 49, 0.15)";
+      // 目標區域底色
+      ctx.fillStyle = "rgba(255, 49, 49, 0.1)";
       ctx.fillRect(redBar.x, 0, redBar.width, canvas.height);
 
+      // 目標桿 (綠色部分)
       const g = ctx.createLinearGradient(redBar.x, redBar.y, redBar.x + redBar.width, redBar.y);
       g.addColorStop(0, "#39ff14");
       g.addColorStop(0.5, "#00f2ff");
       g.addColorStop(1, "#39ff14");
       
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = "rgba(0, 242, 255, 0.8)";
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = "rgba(0, 242, 255, 0.6)";
       ctx.fillStyle = g;
       ctx.fillRect(redBar.x, redBar.y, redBar.width, redBar.height);
       
-      ctx.shadowBlur = 15;
+      // 指針 (白色橫線)
+      ctx.shadowBlur = 10;
       ctx.shadowColor = "#fff";
       ctx.fillStyle = "#fff";
-      ctx.fillRect(redBar.x - 25, pointer.y - 3, redBar.width + 50, 6);
-      
+      ctx.fillRect(redBar.x - 20, pointer.y - 3, redBar.width + 40, 6);
       ctx.shadowBlur = 0;
-
-      if (paused) {
-        ctx.fillStyle = "rgba(255,255,255,0.1)";
-        ctx.fillRect(0,0, canvas.width, canvas.height);
-      }
     }
 
     function loop() {
@@ -303,19 +338,6 @@
       draw();
       requestAnimationFrame(loop);
     }
-
-    const style = document.createElement('style');
-    style.innerHTML = `
-      @keyframes shake {
-        0% { transform: translate(1px, 1px) rotate(0deg); }
-        20% { transform: translate(-3px, 0px) rotate(-1deg); }
-        40% { transform: translate(3px, 2px) rotate(1deg); }
-        60% { transform: translate(-3px, 1px) rotate(0deg); }
-        80% { transform: translate(3px, 1px) rotate(-1deg); }
-        100% { transform: translate(1px, -2px) rotate(0deg); }
-      }
-    `;
-    document.head.appendChild(style);
   </script>
 </body>
 </html>
