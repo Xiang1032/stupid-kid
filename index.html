@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8">
+  <title>誰是笨小孩 - 笨小孩娛樂版</title>
+  <style>
+    :root {
+      --bg-color: #0d0d12;
+      --panel-bg: rgba(25, 25, 35, 0.85);
+      --accent-cyan: #00f2ff;
+      --neon-green: #39ff14;
+      --miss-red: #ff3131;
+      --gold: #ffd700;
+    }
+
+    body { 
+      background: var(--bg-color); 
+      display: flex; 
+      flex-direction: column;
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      color: white;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    /* 頂部資訊欄 */
+    #ui-layer { 
+      margin-bottom: 20px; 
+      text-align: center; 
+      z-index: 5;
+    }
+    #info { 
+      font-size: 28px; 
+      font-weight: 800; 
+      letter-spacing: 2px;
+      text-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+    }
+    #comboText { 
+      color: var(--gold); 
+      font-size: 20px; 
+      font-weight: bold;
+      height: 30px;
+      text-transform: uppercase;
+      font-style: italic;
+    }
+
+    #game-container { 
+      position: relative; 
+      padding: 10px;
+      background: linear-gradient(145deg, #1a1a25, #000000);
+      border-radius: 30px;
+      box-shadow: 0 20px 50px rgba(0,0,0,1);
+    }
+
+    canvas { 
+      background: #15151e; 
+      border-radius: 20px; 
+      display: block;
+    }
+
+    /* 覆蓋畫面：使用毛玻璃效果 */
+    .overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: var(--panel-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-radius: 20px;
+      z-index: 10;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    h1 { 
+      color: var(--miss-red); 
+      font-size: 36px; 
+      margin-bottom: 5px; 
+      text-shadow: 0 0 20px rgba(255,49,49,0.5);
+    }
+    
+    button {
+      padding: 16px 50px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(45deg, var(--accent-cyan), #7000ff);
+      color: white;
+      box-shadow: 0 10px 20px rgba(0, 242, 255, 0.3);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    button:hover { 
+      transform: scale(1.05) translateY(-3px); 
+      box-shadow: 0 15px 30px rgba(0, 242, 255, 0.5);
+    }
+
+    .sound-toggle {
+      position: absolute; bottom: 30px; right: 30px;
+      background: rgba(255,255,255,0.05); 
+      padding: 12px; border-radius: 50%; width: 45px; height: 45px;
+      display: flex; justify-content: center; align-items: center; 
+      cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
+      transition: 0.3s;
+    }
+    .sound-toggle:hover { background: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body>
+
+  <div id="ui-layer">
+    <div id="info">分數: <span id="scoreDisplay">0</span> <span id="livesDisplay" style="margin-left:20px;">❤️❤️❤️</span></div>
+    <div id="comboText"></div>
+  </div>
+
+  <div id="game-container">
+    <canvas id="game" width="260" height="500"></canvas>
+    
+    <div id="startScreen" class="overlay">
+      <h2 style="color: var(--accent-cyan); font-size: 32px; margin-bottom: 25px;">誰是笨小孩?</h2>
+      <button id="startBtn">開始遊戲</button>
+      <p style="margin-top: 20px; color: #666; font-size: 14px;">按空白鍵開始</p>
+    </div>
+
+    <div id="gameOverScreen" class="overlay" style="display: none;">
+      <h1>你是笨小孩</h1>
+      <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; margin-bottom: 30px; min-width: 180px;">
+        <p>最終分數: <span id="finalScore" style="color:var(--accent-cyan); font-weight:bold;">0</span></p>
+        <p>最高連擊: <span id="maxCombo" style="color:var(--gold); font-weight:bold;">0</span></p>
+      </div>
+      <button id="restartBtn">再玩一次</button>
+    </div>
+  </div>
+
+  <div class="sound-toggle" id="muteBtn">🔊</div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const container = document.getElementById("game-container");
+    const comboText = document.getElementById("comboText");
+    
+    let score = 0, lives = 3, combo = 0, maxCombo = 0;
+    let gameRunning = false, paused = false, pauseTimer = 0;
+    let isMuted = false;
+
+    const pointer = { y: 250, speed: 5, dir: 1 };
+    const redBar = { y: 200, height: 90, width: 55, x: 102.5, speed: 3.5, dir: 1, isMoving: false };
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(freq, type, duration, vol=0.1) {
+      if (isMuted) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function initGame() {
+      score = 0; lives = 3; combo = 0; maxCombo = 0;
+      gameRunning = true;
+      pointer.speed = 5;
+      redBar.speed = 3.5;
+      redBar.height = 90;
+      redBar.isMoving = false;
+      updateUI();
+      document.getElementById("startScreen").style.display = "none";
+      document.getElementById("gameOverScreen").style.display = "none";
+      requestAnimationFrame(loop);
+    }
+
+    function updateUI() {
+      document.getElementById("scoreDisplay").textContent = score;
+      document.getElementById("livesDisplay").textContent = "❤️".repeat(lives);
+      comboText.textContent = combo > 1 ? `COMBO X${combo}` : "";
+    }
+
+    function checkHit() {
+      if (paused || !gameRunning) return;
+
+      const isHit = pointer.y >= redBar.y && pointer.y <= (redBar.y + redBar.height);
+
+      if (isHit) {
+        combo++;
+        maxCombo = Math.max(maxCombo, combo);
+        
+        // --- 數值平衡公式：基礎10 + 速度加成 + 輕微連擊加成 ---
+        const difficultyBonus = Math.floor(pointer.speed * 2); 
+        const comboBonus = combo * 2;
+        score += (5 + difficultyBonus + comboBonus);
+        
+        playSound(500 + (Math.min(combo, 15) * 40), 'triangle', 0.2);
+        
+        pointer.speed += 0.35;
+        if (score >= 50) redBar.isMoving = true;
+        if (redBar.isMoving) redBar.speed += 0.2;
+        
+      } else {
+        combo = 0;
+        lives -= 1;
+        container.style.animation = "shake 0.2s ease-in-out";
+        setTimeout(() => container.style.animation = "", 200);
+        
+        playSound(100, 'square', 0.3, 0.05);
+        if (lives <= 0) {
+          gameRunning = false;
+          document.getElementById("finalScore").textContent = score;
+          document.getElementById("maxCombo").textContent = maxCombo;
+          document.getElementById("gameOverScreen").style.display = "flex";
+          return;
+        }
+      }
+      
+      updateUI();
+      paused = true;
+      pauseTimer = Date.now();
+    }
+
+    document.getElementById("startBtn").onclick = initGame;
+    document.getElementById("restartBtn").onclick = initGame;
+    document.getElementById("muteBtn").onclick = () => {
+      isMuted = !isMuted;
+      document.getElementById("muteBtn").textContent = isMuted ? "🔇" : "🔊";
+    };
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (!gameRunning) {
+          if (document.getElementById("startScreen").style.display !== "none") initGame();
+        } else {
+          checkHit();
+        }
+      }
+    });
+
+    function update() {
+      if (paused) {
+        if (Date.now() - pauseTimer >= 300) paused = false;
+        return;
+      }
+      pointer.y += pointer.speed * pointer.dir;
+      if (pointer.y <= 0 || pointer.y >= canvas.height) pointer.dir *= -1;
+
+      if (redBar.isMoving) {
+        redBar.y += redBar.speed * redBar.dir;
+        if (redBar.y <= 0 || redBar.y + redBar.height >= canvas.height) redBar.dir *= -1;
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+      ctx.lineWidth = 2;
+      for(let i=0; i<canvas.height; i+=40) {
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+      }
+
+      ctx.fillStyle = "rgba(255, 49, 49, 0.15)";
+      ctx.fillRect(redBar.x, 0, redBar.width, canvas.height);
+
+      const g = ctx.createLinearGradient(redBar.x, redBar.y, redBar.x + redBar.width, redBar.y);
+      g.addColorStop(0, "#39ff14");
+      g.addColorStop(0.5, "#00f2ff");
+      g.addColorStop(1, "#39ff14");
+      
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = "rgba(0, 242, 255, 0.8)";
+      ctx.fillStyle = g;
+      ctx.fillRect(redBar.x, redBar.y, redBar.width, redBar.height);
+      
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = "#fff";
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(redBar.x - 25, pointer.y - 3, redBar.width + 50, 6);
+      
+      ctx.shadowBlur = 0;
+
+      if (paused) {
+        ctx.fillStyle = "rgba(255,255,255,0.1)";
+        ctx.fillRect(0,0, canvas.width, canvas.height);
+      }
+    }
+
+    function loop() {
+      if (!gameRunning) return;
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @keyframes shake {
+        0% { transform: translate(1px, 1px) rotate(0deg); }
+        20% { transform: translate(-3px, 0px) rotate(-1deg); }
+        40% { transform: translate(3px, 2px) rotate(1deg); }
+        60% { transform: translate(-3px, 1px) rotate(0deg); }
+        80% { transform: translate(3px, 1px) rotate(-1deg); }
+        100% { transform: translate(1px, -2px) rotate(0deg); }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>
