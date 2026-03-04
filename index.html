@@ -191,6 +191,7 @@
       pointer.speed = 5;
       redBar.speed = 3.5;
       redBar.height = 90; // 重置長度
+      redBar.y = 200; // 強制讓安全區回到畫面中間附近
       redBar.isMoving = false;
       updateUI();
       document.getElementById("startScreen").style.display = "none";
@@ -225,7 +226,7 @@
         if (score >= 50) redBar.isMoving = true;
         
         // 2. 每 100 分縮短桿子長度 (最低不小於 35)
-        let shrinkLevels = Math.floor(score / 100);
+        let shrinkLevels = Math.floor(score / 90);
         redBar.height = Math.max(35, redBar.baseHeight - (shrinkLevels * 8));
 
         if (redBar.isMoving) redBar.speed += 0.15;
@@ -343,6 +344,7 @@
   </script>
 </body>
 </html>
+
 
 
 
